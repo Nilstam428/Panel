@@ -1,14 +1,17 @@
 # FastAPI + Vite frontend
 
-The React/Vite dashboard now lives in `server/frontend` alongside the FastAPI project. This directory is a standard Vite app and can be deployed independently as a Vercel static site.
+The React/Vite dashboard lives in `server/frontend`; the FastAPI app is in `server/app`. The repository-root `vercel.json` builds and routes both as one Vercel deployment. Requests to `/api/*` go to FastAPI, and all other paths serve the Vite SPA from the same origin.
 
-## Vercel
+## Vercel setup
 
-Set the Vercel project's **Root Directory** to `server/frontend`. Vercel will use `vercel.json` to install dependencies, run `npm run build`, and publish `dist`.
+1. Import this repository into Vercel and set **Root Directory** to the repository root (`.`), not `server` or `server/frontend`.
+2. Let the root `vercel.json` provide the build and routing configuration.
+3. Set the WhatsApp credentials and other backend settings (`DRY_RUN`, `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, etc.) as Vercel environment variables. Keep `DRY_RUN=true` until live sending is intentionally configured.
+4. No `VITE_API_BASE_URL` is needed for this unified deployment: the frontend calls `/api/...` on its own origin. Do not configure this Vercel project to deploy only `server/frontend`.
 
-Set `VITE_API_BASE_URL` in the Vercel project environment to the public base URL of the FastAPI deployment (for example, `https://your-api.example.com`). Leave it unset only when the API is served from the same origin. The API must allow the deployed frontend origin in its CORS settings.
+The API routes remain `/api/templates`, `/api/messages/preview`, and `/api/messages/send`. Because the browser and API share an origin, this setup avoids cross-origin requests and their CORS configuration requirements.
 
-## Local development
+## Local frontend development
 
 ```bash
 cd server/frontend
@@ -16,4 +19,4 @@ npm install
 npm run dev
 ```
 
-Configure `VITE_API_BASE_URL` in a `.env.local` file if the FastAPI API is not available at the same origin. The app expects the API routes `/api/templates`, `/api/messages/preview`, and `/api/messages/send`.
+When running the Vite development server separately from FastAPI, set `VITE_API_BASE_URL` to the FastAPI server URL in `server/frontend/.env.local`; for example, `http://localhost:8000`. Configure FastAPI CORS to allow the Vite dev-server origin when using this split local setup.
