@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WhatsApp Template Panel</title>
+  <style>
+    :root { font-family: Inter, system-ui, -apple-system, sans-serif; color: #162033; background: #f4f7fb; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; }
+    .shell { max-width: 1040px; margin: 0 auto; padding: 32px 20px 64px; }
+    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+    h1 { margin: 0; font-size: clamp(24px, 4vw, 38px); }
+    .badge { border-radius: 999px; background: #dcfce7; color: #166534; padding: 8px 12px; font-weight: 700; }
+    .grid { display: grid; grid-template-columns: 1fr 340px; gap: 20px; }
+    .card { background: white; border: 1px solid #e6ebf2; border-radius: 18px; padding: 24px; box-shadow: 0 12px 32px rgba(31, 41, 55, .06); }
+    label { display: block; font-size: 14px; font-weight: 700; margin: 0 0 8px; }
+    input, select { width: 100%; border: 1px solid #d8dee8; border-radius: 10px; padding: 12px 13px; font: inherit; background: white; }
+    input:focus, select:focus { outline: 3px solid #bfe7d1; border-color: #25d366; }
+    .field { margin-bottom: 18px; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    button { border: 0; border-radius: 10px; background: #128c7e; color: white; font-weight: 800; padding: 13px 18px; cursor: pointer; }
+    button:hover { background: #0f7668; }
+    button:disabled { opacity: .55; cursor: wait; }
+    .primary { width: 100%; }
+    .preview { background: #edf7ef; border-radius: 14px; padding: 14px; }
+    .bubble { background: white; border-radius: 12px 12px 12px 3px; padding: 14px; box-shadow: 0 2px 8px rgba(0,0,0,.08); line-height: 1.55; }
+    .preview-label { color: #64748b; font-size: 12px; font-weight: 800; text-transform: uppercase; margin-bottom: 10px; }
+    .status { min-height: 22px; margin-top: 14px; font-size: 14px; font-weight: 700; }
+    .success { color: #15803d; } .error { color: #b91c1c; }
+    @media (max-width: 760px) { .grid, .row { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header><h1>WhatsApp Panel</h1><span class="badge">Template Sender</span></header>
+    <div class="grid">
+      <section class="card">
+        <form id="send-form">
+          <div class="row">
+            <div class="field"><label for="phone">Customer phone</label><input id="phone" name="phone" inputmode="tel" placeholder="9876543210" required /></div>
+            <div class="field"><label for="customerId">Customer ID</label><input id="customerId" name="customerId" placeholder="CUS-1001" required /></div>
+          </div>
+          <div class="field"><label for="customerName">Customer name</label><input id="customerName" name="customerName" placeholder="Customer name" required /></div>
+          <div class="field"><label for="templateName">Template name</label><input id="templateName" name="templateName" placeholder="hello_world" required /></div>
+          <button class="primary" id="send-button" type="submit">Send template</button>
+          <div id="status" class="status" role="status"></div>
+        </form>
+      </section>
+      <aside class="card">
+        <div class="preview-label">Live preview</div>
+        <div class="preview"><div class="bubble">Hello <strong id="previewName">Customer</strong>, your customer ID is <strong id="previewId">CUS-1001</strong>.</div></div>
+      </aside>
+    </div>
+  </main>
+  <script>
+    const form = document.querySelector('#send-form');
+    const button = document.querySelector('#send-button');
+    const status = document.querySelector('#status');
+    const nameInput = document.querySelector('#customerName');
+    const idInput = document.querySelector('#customerId');
+    nameInput.addEventListener('input', () => document.querySelector('#previewName').textContent = nameInput.value || 'Customer');
+    idInput.addEventListener('input', () => document.querySelector('#previewId').textContent = idInput.value || 'CUS-1001');
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      button.disabled = true;
+      status.className = 'status';
+      status.textContent = 'Sending...';
+      const formData = Object.fromEntries(new FormData(form));
+      try {
+        const response = await fetch('/api/send-template', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formData) });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Failed to send template');
+        status.className = 'status success';
+        status.textContent = `Sent successfully. Message ID: ${data.messageId || 'unknown'}`;
+        form.reset();
+        document.querySelector('#previewName').textContent = 'Customer';
+        document.querySelector('#previewId').textContent = 'CUS-1001';
+      } catch (error) {
+        status.className = 'status error';
+        status.textContent = error.message;
+      } finally {
+        button.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
